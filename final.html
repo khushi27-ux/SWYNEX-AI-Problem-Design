@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Lab Error Detective</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f5fb;--sf:#fff;--sf2:#eaeefa;--ink:#131a2c;--mut:#5d6785;--ac:#5b4bff;--acs:#e6e3ff;--ok:#0f9d63;--warn:#b7791f;--bad:#d03a52;--bd:#d9def0;--code:#0f1424;--codei:#e8ecf8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1220;--sf:#151c30;--sf2:#1c2540;--ink:#e8ecf8;--mut:#93a0c4;--ac:#8b7cff;--acs:#2a2760;--ok:#4ade9b;--warn:#ffc15e;--bad:#ff7a8e;--bd:#27314f;--code:#090d19;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1220;--sf:#151c30;--sf2:#1c2540;--ink:#e8ecf8;--mut:#93a0c4;--ac:#8b7cff;--acs:#2a2760;--ok:#4ade9b;--warn:#ffc15e;--bad:#ff7a8e;--bd:#27314f;--code:#090d19;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Bricolage Grotesque",system-ui,sans-serif}
+.mono,pre,textarea,code{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--bd)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.bar{max-width:1180px;margin:auto;padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{font-weight:700;font-size:20px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.logo i{width:30px;height:30px;border-radius:9px;background:var(--ac);display:grid;place-items:center;color:#fff;font-style:normal;font-size:16px}
+nav{display:flex;gap:4px;margin-left:auto;background:var(--sf2);padding:4px;border-radius:12px}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+nav button{background:none;padding:7px 14px;border-radius:9px;color:var(--mut);font-weight:500}
+nav button[aria-selected=true]{background:var(--sf);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+main{max-width:1180px;margin:auto;padding:22px 18px 60px}
+h1{font-size:clamp(28px,5vw,44px);line-height:1.08;letter-spacing:-.03em;margin:6px 0 8px}
+.sub{color:var(--mut);max-width:620px;margin:0 0 22px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:18px}
+.lab{font-weight:700;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+textarea{width:100%;min-height:230px;resize:vertical;background:var(--code);color:var(--codei);border:1px solid var(--bd);border-radius:12px;padding:14px;font-size:13px;line-height:1.55}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 12px}
+.chip{background:var(--sf2);color:var(--ink);padding:6px 11px;border-radius:99px;font-size:13px;border:1px solid var(--bd)}
+.chip:hover{border-color:var(--ac)}
+.row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.btn{background:var(--ac);color:#fff;padding:11px 20px;border-radius:12px;font-weight:700}
+.btn.g{background:var(--sf2);color:var(--ink);font-weight:500;padding:9px 14px}
+.btn:disabled{opacity:.5;cursor:default}
+.note{color:var(--mut);font-size:13px}
+.empty{padding:34px 10px;text-align:center;color:var(--mut)}
+.case{border-left:4px solid var(--ac);padding-left:14px;margin-bottom:16px}
+.case h2{margin:0;font-size:26px;letter-spacing:-.02em}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;background:var(--acs);color:var(--ac)}
+.ev{background:var(--code);color:var(--codei);border-radius:10px;padding:10px 12px;font-size:13px;overflow-x:auto;margin:10px 0;white-space:pre-wrap;word-break:break-word}
+.meter{height:7px;background:var(--sf2);border-radius:9px;overflow:hidden;margin-top:6px}
+.meter b{display:block;height:100%;background:var(--ok);transition:width .5s}
+.sec{margin:16px 0 6px;font-weight:700}
+.frames{display:flex;flex-direction:column;gap:5px}
+.fr{font-size:13px;background:var(--sf2);padding:6px 10px;border-radius:8px;display:flex;justify-content:space-between;gap:8px;overflow-wrap:anywhere}
+.fr.hot{border:1px solid var(--bad)}
+.hint{border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin:8px 0;animation:in .25s}
+.hint small{color:var(--ac);font-weight:700}
+.hint.fix{border-color:var(--ok)}
+@keyframes in{from{opacity:0;transform:translateY(4px)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+pre{background:var(--code);color:var(--codei);padding:12px;border-radius:10px;overflow-x:auto;font-size:13px;margin:8px 0 0}
+.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);border:1px solid var(--warn);padding:8px 12px;border-radius:10px;font-size:13px;margin-top:10px}
+.wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--bd)}th{color:var(--mut);font-weight:500}
+.pass{color:var(--ok);font-weight:700}.fail{color:var(--bad);font-weight:700}
+.stat{font-size:44px;font-weight:700;letter-spacing:-.03em}
+.hist{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow:auto}
+.hist button{text-align:left;background:var(--sf2);padding:7px 10px;border-radius:8px;font-size:13px}
+ul{padding-left:20px}
+.xp{display:flex;gap:10px;align-items:center;font-size:13px;font-weight:700;background:var(--sf2);padding:6px 12px;border-radius:99px}
+.xp .meter{width:56px;margin:0}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+@media(max-width:520px){.opts{grid-template-columns:1fr}}
+.opt{background:var(--sf2);padding:14px;border-radius:12px;font-weight:700;border:2px solid transparent;transition:transform .1s}
+.opt:hover{border-color:var(--ac)}.opt:active{transform:scale(.97)}
+.opt.good{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 20%,transparent)}
+.opt.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 20%,transparent)}
+.stats{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px}.stats b{display:block;font-size:24px}
+.bdgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.bdg{background:var(--sf2);border-radius:12px;padding:12px;text-align:center;font-size:13px;opacity:.4}
+.bdg.on{opacity:1;border:1px solid var(--ac)}.bdg i{display:block;font-size:26px;font-style:normal}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);background:var(--ac);color:#fff;padding:10px 18px;border-radius:99px;font-weight:700;opacity:0;pointer-events:none;transition:.3s;z-index:20;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.wk{display:flex;justify-content:space-between;gap:4px;margin-bottom:10px}
+.wd{flex:1;max-width:46px;height:52px;border-radius:12px;background:var(--sf2);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;color:var(--mut)}
+.wd.on{background:var(--acs);transform:translateY(-2px)}.wd small{font-size:10px;color:var(--mut)}
+@keyframes sk{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.opt.bad{animation:sk .3s}
+#dq{background:linear-gradient(135deg,var(--ac),#ff5fa2)}
+</style>
+</head>
+<body>
+<header><div class="bar">
+<div class="logo"><i>🔍</i>Error Detective</div>
+<div class="xp" id="xp" aria-label="Your progress"></div><div id="toast" role="status"></div>
+<nav role="tablist" aria-label="Sections">
+<button role="tab" aria-selected="true" data-v="detect">Detective</button>
+<button role="tab" aria-selected="false" data-v="game">Cases 🎮</button>
+<button role="tab" aria-selected="false" data-v="eval">Evaluation</button>
+<button role="tab" aria-selected="false" data-v="about">About</button>
+<button id="theme" aria-label="Toggle theme">◐</button>
+</nav></div></header>
+<main>
+<section id="detect">
+<h1>Paste the error. Get the case solved.</h1>
+<p class="sub">Drop in a Python or JavaScript error. You get the culprit, a plain-English explanation, and hints that unlock one at a time so you actually learn the fix.</p>
+<div class="grid">
+<div class="card">
+<p class="lab">Evidence <span class="note" id="cnt">0 / 6000</span></p>
+<div class="chips" id="chips"></div>
+<textarea id="inp" spellcheck="false" placeholder="Paste your traceback or console error here…" aria-label="Error text" maxlength="6000"></textarea>
+<div class="row"><button class="btn" id="go">Investigate</button><button class="btn g" id="clr">Clear</button><span class="note">Ctrl/Cmd + Enter</span></div>
+<div class="warn">🔒 Never paste passwords or API keys. Anything that looks like a secret is auto-redacted before analysis.</div>
+<p class="sec">Recent cases</p><div class="hist" id="hist"></div>
+</div>
+<div class="card" id="out" aria-live="polite"><div class="empty">No case open yet.<br>Pick an example or paste an error, then press Investigate.</div></div>
+</div>
+</section>
+<section id="game" hidden>
+<h1>Cold cases. Name the culprit.</h1>
+<p class="sub">Read the buggy code, spot the error type, and earn XP. Answer fast and keep a combo going for bonus points. Come back daily to grow your streak.</p>
+<div class="grid">
+<div class="card"><div id="dl"></div><div class="stats" id="st"></div><div id="gm"></div></div>
+<div class="card"><p class="lab">Badges</p><div class="bdgs" id="bd"></div><p class="note" style="margin-bottom:0">Progress is saved on this device.</p></div>
+</div>
+</section>
+<section id="eval" hidden>
+<h1>Does the detective actually work?</h1>
+<p class="sub">Ten known errors run through the engine live in your browser. Expected vs actual, with a pass rate.</p>
+<div class="card"><div class="row" style="margin:0 0 12px"><div class="stat" id="rate">–</div><div class="note" id="rnote"></div><button class="btn g" id="rerun" style="margin-left:auto">Run again</button></div>
+<div class="wrap"><table><thead><tr><th>#</th><th>Sample</th><th>Expected</th><th>Actual</th><th>Result</th></tr></thead><tbody id="tb"></tbody></table></div></div>
+</section>
+<section id="about" hidden>
+<h1>How it works</h1>
+<div class="grid">
+<div class="card"><p class="lab">Pipeline</p><ol><li>Input is trimmed, capped at 6000 characters, and secrets are redacted.</li><li>The parser finds the final error line, error type, message, and stack frames.</li><li>A rule engine of 30+ patterns maps the error to a cause, explanation, 3 progressive hints, and a code fix.</li><li>Confidence reflects how specific the match was. Unknown errors get a low score and honest generic advice.</li></ol></div>
+<div class="card"><p class="lab">Limits and ethics</p><ul><li>It covers common Python and JavaScript errors. Rare or framework-specific errors fall back to general guidance.</li><li>It runs fully in your browser. Nothing is sent anywhere, and history stays on your device.</li><li>Treat results as a learning aid. Verify fixes against your own code.</li><li>Hints come first on purpose, so you build debugging skill instead of copying answers.</li></ul></div>
+</div>
+</section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const q=(m,r)=>(m.match(r)||[])[1]||"";
+const EX={
+NameError:`Traceback (most recent call last):\n  File "main.py", line 4, in <module>\n    print(total)\nNameError: name 'total' is not defined`,
+IndexError:`Traceback (most recent call last):\n  File "lab.py", line 7, in <module>\n    print(scores[5])\nIndexError: list index out of range`,
+TypeError:`Traceback (most recent call last):\n  File "calc.py", line 3, in <module>\n    print("Age: " + 21)\nTypeError: can only concatenate str (not "int") to str`,
+KeyError:`Traceback (most recent call last):\n  File "app.py", line 9, in load\n    return user["email"]\nKeyError: 'email'`,
+"None attr":`Traceback (most recent call last):\n  File "bot.py", line 12, in reply\n    text = result.strip()\nAttributeError: 'NoneType' object has no attribute 'strip'`,
+Import:`Traceback (most recent call last):\n  File "train.py", line 1, in <module>\n    import sklearn\nModuleNotFoundError: No module named 'sklearn'`,
+JavaScript:`Uncaught TypeError: Cannot read properties of undefined (reading 'map')\n    at render (app.js:42:18)\n    at main (app.js:10:3)`
+};
+const R=[
+["NameError",/name '(.+?)' is not defined/,m=>{const x=q(m,/name '(.+?)'/);return{c:`Python hit the name ${x} before it was ever created.`,e:`Python only knows names you have assigned, imported, or defined earlier. ${x} is not one of them at this point in the code.`,h:[`Find the first place ${x} should be created. Does it exist above this line?`,`Check spelling and capitals, and make sure it is not defined inside a different function or after this line runs.`,`Define it before you use it.`],f:`${x} = 0  # create it first\nprint(${x})`}}],
+["UnboundLocalError",null,m=>({c:`A variable is assigned inside a function but read before that assignment.`,e:`Because you assign to the name somewhere in the function, Python treats it as local for the whole function, so reading it earlier fails.`,h:[`Is this variable also defined outside the function?`,`Assigning anywhere in a function makes the name local everywhere in it.`,`Pass it in as a parameter, or declare it global if you truly need to change it.`],f:`def add(total, n):\n    return total + n`})],
+["IndexError",/out of range/,m=>({c:`You asked for a position that does not exist in the list.`,e:`Python lists start at 0, so a list of 5 items has positions 0 to 4. Asking for 5 or higher fails, as does any index on an empty list.`,h:[`How many items does the list really have at this moment?`,`Compare your index to len(your_list) - 1. Loops that go one step too far are the usual cause.`,`Check the length first, or loop over the items directly.`],f:`for item in scores:\n    print(item)\n# or\nif len(scores) > 5:\n    print(scores[5])`})],
+["KeyError",null,m=>{const k=m.trim();return{c:`The dictionary has no key ${k}.`,e:`Square-bracket lookup raises KeyError when the key is missing. Keys are case-sensitive and must match exactly.`,h:[`Print the dictionary's keys. Is ${k} really there?`,`Look for typos, different capitals, or data that never loaded.`,`Use .get() with a default, or check with "in" first.`],f:`value = data.get(${k}, "default")\nif ${k} in data:\n    value = data[${k}]`}}],
+["TypeError",/can only concatenate str|must be str, not|unsupported operand.*(str|int)/,m=>({c:`Text and a number are being combined, which Python will not do automatically.`,e:`The + operator cannot join a string with an integer. Python needs both sides to be the same kind of thing.`,h:[`Which side of the + is text and which is a number?`,`Convert one side so both match: str() to make text, int() to make a number.`,`Use an f-string to mix values cleanly.`],f:`age = 21\nprint(f"Age: {age}")\nprint("Age: " + str(age))`})],
+["TypeError",/not callable/,m=>({c:`Something that is not a function is being called with ( ).`,e:`You likely reused a function name for a variable, such as naming a variable list or print, or put parentheses after a value.`,h:[`Which name has the parentheses right after it?`,`Did you assign a value to that name earlier, hiding the real function?`,`Rename the variable so it no longer shadows the function.`],f:`items = [1, 2]   # not "list = ..."\nprint(len(items))`})],
+["TypeError",/not subscriptable|not iterable/,m=>({c:`You are indexing or looping over a value that does not support it, often None.`,e:`Brackets and for-loops need a list, string, or dict. A function that returned nothing gives None, which cannot be indexed.`,h:[`Print the value and its type() just before the failing line.`,`Check that the function producing it has a return statement on every path.`,`Return the value, or guard against None.`],f:`if result is not None:\n    print(result[0])`})],
+["TypeError",/positional argument/,m=>({c:`The call has the wrong number of arguments.`,e:`Python compared your call to the function definition and the counts do not match.`,h:[`Open the function definition and count its parameters.`,`Methods inside classes also need self in the definition.`,`Match the call to the definition, or add defaults.`],f:`def greet(name, greeting="Hi"):\n    print(greeting, name)\ngreet("Ana")`})],
+["TypeError",/Cannot read prop|Cannot read properties|is not a function|undefined/,m=>{const p=q(m,/reading '(.+?)'/)||q(m,/(\S+) is not a function/);return{c:`JavaScript tried to use ${p?"."+p:"a property"} on a value that is undefined or null.`,e:`The thing before the dot has no value yet. This often happens when data has not loaded, or a variable name or path is wrong.`,h:[`Log the object just before the failing line. Is it undefined?`,`Check whether the data arrives asynchronously, and whether the property path is spelled correctly.`,`Use optional chaining and a safe default.`],f:`const list = (data?.items ?? []);\nlist.map(x => x.name);`}}],
+["TypeError",null,m=>({c:`An operation was applied to a value of the wrong type.`,e:`Python or JavaScript received a value type it cannot work with here.`,h:[`Print type() of each value on the failing line.`,`Compare against what the function or operator expects.`,`Convert the value, or fix where it comes from.`],f:`print(type(value))`})],
+["AttributeError",/NoneType/,m=>({c:`A variable is None, and you are calling a method on it.`,e:`None means "no value". A function that fails to return anything, or a search that finds nothing, gives None, which has no methods.`,h:[`Which variable sits before the dot, and where did it get its value?`,`Look for a missing return statement, or a lookup that found nothing.`,`Check for None first.`],f:`if result is not None:\n    text = result.strip()`})],
+["AttributeError",null,m=>({c:`The object does not have the attribute or method you used.`,e:`Often a typo, a wrong capital, or the object is a different type than you expected.`,h:[`What type is the object? Try print(type(obj)).`,`Run dir(obj) to see what it really offers.`,`Fix the name, or convert to the right type.`],f:`print(type(obj))\nprint(dir(obj))`})],
+["ValueError",/invalid literal/,m=>({c:`A piece of text cannot be turned into a number.`,e:`int() and float() only accept text that looks like a number. Spaces, letters, or empty strings fail.`,h:[`Print the exact text being converted. Is it really numeric?`,`Look for blanks, letters, or decimals passed to int().`,`Validate first, or catch the error.`],f:`try:\n    n = int(text.strip())\nexcept ValueError:\n    print("Enter a whole number")`})],
+["ValueError",null,m=>({c:`The type is right but the value is not acceptable.`,e:`The function understood the kind of value, but this particular value is out of range or malformed.`,h:[`Read the message closely. It usually names the bad value.`,`Check the docs for what values are allowed.`,`Clean or validate the value before the call.`],f:`# validate before calling`})],
+["ZeroDivisionError",null,m=>({c:`Something was divided by zero.`,e:`Division by zero is undefined, so Python stops.`,h:[`Which value is on the right of the / ?`,`Trace where that value comes from. Empty lists often give a length of 0.`,`Guard the division.`],f:`avg = total / count if count else 0`})],
+["ModuleNotFoundError",null,m=>{const x=q(m,/'(.+?)'/);return{c:`Python cannot find the package ${x}.`,e:`It is not installed in the Python environment you are running, or the name differs from the install name.`,h:[`Is the package installed in this environment?`,`Some import names differ from install names, such as sklearn from scikit-learn.`,`Install it with pip in the active environment.`],f:`pip install ${x==="sklearn"?"scikit-learn":x==="cv2"?"opencv-python":x}`}}],
+["FileNotFoundError",null,m=>({c:`The file path points to nothing.`,e:`Python looks relative to where the program runs, not where your script lives.`,h:[`Print os.getcwd() and compare to your file's location.`,`Check spelling, extension, and slashes.`,`Use an absolute path or a path built from your script's folder.`],f:`from pathlib import Path\np = Path(__file__).parent / "data.csv"`})],
+["IndentationError",null,m=>({c:`Python's spacing is inconsistent.`,e:`Python uses indentation to group code. Mixed tabs and spaces, or a missing indent after a colon, breaks it.`,h:[`Look at the line shown and the one above it.`,`Every block after a colon must be indented the same amount.`,`Use 4 spaces everywhere and never mix tabs.`],f:`if ok:\n    print("indented")`})],
+["SyntaxError",null,m=>({c:`The code is not valid grammar, often a missing bracket, quote, or colon.`,e:`Python could not even read the code, so nothing ran. The real mistake is often on the line before the one reported.`,h:[`Check the line reported and the one above it.`,`Count brackets and quotes, and check for a missing colon after if, for, def.`,`Fix the unclosed or missing symbol.`],f:`if x == 1:\n    print("ok")`})],
+["RecursionError",null,m=>({c:`A function keeps calling itself without stopping.`,e:`Each call uses memory. Without a base case, Python stops it at about 1000 levels.`,h:[`What condition should end the recursion?`,`Does each call move closer to that condition?`,`Add a base case.`],f:`def fact(n):\n    if n <= 1:\n        return 1\n    return n * fact(n - 1)`})],
+["ReferenceError",null,m=>{const x=q(m,/(\S+) is not defined/);return{c:`JavaScript cannot find ${x||"that variable"}.`,e:`It was never declared, is out of scope, or is spelled differently.`,h:[`Is it declared with const or let before this line?`,`Check scope. Is it inside another block or function?`,`Declare it where this code can see it.`],f:`const ${x||"value"} = 0;`}}]
+];
+const SEV={IndentationError:"Low",SyntaxError:"Low",NameError:"Low",RecursionError:"High",ModuleNotFoundError:"Medium"};
+function redact(t){let n=0;const r=(re,rep)=>{t=t.replace(re,(...a)=>{n++;return typeof rep==="function"?rep(...a):rep})};
+r(/\bsk-[A-Za-z0-9_-]{16,}/g,"[REDACTED_KEY]");r(/\bAKIA[0-9A-Z]{16}\b/g,"[REDACTED_KEY]");r(/\bgh[pous]_[A-Za-z0-9]{20,}/g,"[REDACTED_KEY]");
+r(/\b(Bearer)\s+[A-Za-z0-9._-]{12,}/gi,"$1 [REDACTED]");r(/\b(password|passwd|secret|token|api[_-]?key)(\s*[=:]\s*)(["']?)[^\s"',;]+/gi,(m,a,b,c)=>a+b+c+"[REDACTED]");
+return{t,n}}
+function parse(raw){const L=raw.split(/\r?\n/).map(s=>s.trimEnd());let type="",msg="",i;
+for(i=L.length-1;i>=0;i--){const m=L[i].trim().match(/^(?:Uncaught\s+)?(?:[\w.]*\.)?([A-Za-z_]*(?:Error|Exception|Interrupt))\s*(?::\s*(.*))?$/);if(m){type=m[1];msg=m[2]||"";break}}
+const fr=[];let m;const py=/File "([^"]+)", line (\d+)(?:, in (.+))?/g;while((m=py.exec(raw)))fr.push({f:m[1],l:m[2],fn:m[3]||""});
+if(!fr.length){const js=/at (?:(.+?) \()?([^\s()]+):(\d+):(\d+)\)?/g;while((m=js.exec(raw)))fr.push({f:m[2],l:m[3],fn:m[1]||""})}
+return{type,msg,fr,lang:/Traceback|File ".*", line/.test(raw)?"Python":/\bat .*:\d+|Uncaught|ReferenceError|Cannot read/.test(raw)?"JavaScript":"Python",line:L[i]||""}}
+function analyze(raw){raw=(raw||"").trim();if(!raw)return{err:"Paste an error first. The box is empty."};
+if(!/\w/.test(raw))return{err:"That input has no readable text."};
+const rd=redact(raw.slice(0,6000));const p=parse(rd.t);
+if(!p.type)return{err:"No error line found. Paste the full traceback or console error, including the last line that ends with something like TypeError: ...",red:rd.n};
+let hit=null,spec=false;for(const[t,re,fn]of R){if(t!==p.type)continue;if(re&&!re.test(p.msg+" "+rd.t))continue;hit=fn(p.msg);spec=!!re;break}
+if(!hit)hit={c:`A ${p.type} was raised, which is not in the detective's casebook.`,e:`Read the message carefully: ${p.msg||"(no message)"}. The last frame of the traceback is where it surfaced.`,h:[`Open the last file and line in the traceback.`,`Search the exact message text plus the language name.`,`Print the values on that line to see which one is unexpected.`],f:`# add print() statements around the failing line`};
+return{...p,...hit,red:rd.n,conf:spec?95:(hit.c.includes("casebook")?35:78),sev:SEV[p.type]||"Medium",known:!hit.c.includes("casebook")}}
+let cur=null,shown=1;
+function render(){const o=$("#out");if(!cur){return}
+if(cur.err){o.innerHTML=`<div class="warn" style="margin:0">${esc(cur.err)}</div>`;return}
+const c=cur,h=c.h,fix=shown>3;
+o.innerHTML=`<div class="case"><span class="badge">${esc(c.lang)} · ${esc(c.sev)} severity</span><h2>${esc(c.type)}</h2><div class="ev">${esc(c.line.trim())}</div>
+<div class="note">Detective confidence: ${c.conf}%</div><div class="meter"><b style="width:${c.conf}%"></b></div></div>
+${c.red?`<div class="warn">🔒 ${c.red} possible secret${c.red>1?"s":""} redacted.</div>`:""}
+<p class="sec">What happened</p><p style="margin:0">${esc(c.e)}</p>
+<p class="sec">Likely cause</p><p style="margin:0">${esc(c.c)}</p>
+${c.fr.length?`<p class="sec">Trail of evidence</p><div class="frames">${c.fr.map((f,i)=>`<div class="fr mono${i===c.fr.length-1?" hot":""}"><span>${esc(f.f)}:${esc(f.l)}</span><span>${esc(f.fn)}</span></div>`).join("")}</div>`:""}
+<p class="sec">Hints</p>${h.slice(0,Math.min(shown,3)).map((x,i)=>`<div class="hint"><small>Hint ${i+1} of 3 · ${["Nudge","Stronger","Almost there"][i]}</small><div>${esc(x)}</div></div>`).join("")}
+${shown>3?`<div class="hint fix"><small>The fix</small><pre>${esc(c.f)}</pre></div>`:""}
+<div class="row"><button class="btn" id="more">${shown<3?"Reveal next hint":shown===3?"Show the full fix":"Fix revealed"}</button><button class="btn g" id="cp">Copy case report</button></div>`;
+$("#more").disabled=fix;$("#more").onclick=()=>{shown++;render()};
+$("#cp").onclick=async()=>{const t=`Case: ${c.type}\n${c.line.trim()}\nCause: ${c.c}\nExplanation: ${c.e}\nFix:\n${c.f}`;try{await navigator.clipboard.writeText(t);$("#cp").textContent="Copied"}catch(e){$("#cp").textContent="Copy blocked by browser"}}}
+function run(){const v=$("#inp").value;cur=analyze(v);shown=1;render();if(!cur.err){save(cur);award(10,"Case investigated")}$("#out").scrollIntoView({block:"nearest",behavior:"smooth"})}
+function save(c){try{let a=JSON.parse(localStorage.getItem("ed_h")||"[]");a=[{t:c.type,m:c.line.trim().slice(0,90),raw:$("#inp").value.slice(0,6000)},...a.filter(x=>x.raw!==$("#inp").value)].slice(0,6);localStorage.setItem("ed_h",JSON.stringify(a))}catch(e){}hist()}
+function hist(){let a=[];try{a=JSON.parse(localStorage.getItem("ed_h")||"[]")}catch(e){}
+$("#hist").innerHTML=a.length?"":`<span class="note">Solved cases will appear here.</span>`;a.forEach(x=>{const b=document.createElement("button");b.textContent=x.t+" — "+x.m;b.onclick=()=>{$("#inp").value=x.raw;count();run()};$("#hist").appendChild(b)})}
+function count(){$("#cnt").textContent=$("#inp").value.length+" / 6000"}
+$("#chips").innerHTML=Object.keys(EX).map(k=>`<button class="chip" data-k="${esc(k)}">${esc(k)}</button>`).join("");
+$("#chips").onclick=e=>{const k=e.target.dataset.k;if(k){$("#inp").value=EX[k];count();run()}};
+$("#go").onclick=run;$("#clr").onclick=()=>{$("#inp").value="";count();cur=null;$("#out").innerHTML=`<div class="empty">No case open yet.<br>Pick an example or paste an error, then press Investigate.</div>`};
+$("#inp").oninput=count;$("#inp").onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter")run()};
+const T=[["NameError",EX.NameError],["IndexError",EX.IndexError],["TypeError",EX.TypeError],["KeyError",EX.KeyError],["AttributeError",EX["None attr"]],["ModuleNotFoundError",EX.Import],["TypeError",EX.JavaScript],["ZeroDivisionError","Traceback (most recent call last):\n  File \"m.py\", line 2, in <module>\n    print(10/0)\nZeroDivisionError: division by zero"],["ValueError","Traceback (most recent call last):\n  File \"m.py\", line 1, in <module>\n    int(\"abc\")\nValueError: invalid literal for int() with base 10: 'abc'"],["IndentationError","  File \"m.py\", line 3\n    print(1)\nIndentationError: expected an indented block after 'if' statement on line 2"]];
+function evalRun(){let ok=0;$("#tb").innerHTML=T.map((t,i)=>{const r=analyze(t[1]);const a=r.type||"error";const p=a===t[0]&&!r.err&&r.known;if(p)ok++;return`<tr><td>${i+1}</td><td class="mono">${esc(t[1].split("\n").pop().slice(0,48))}</td><td>${t[0]}</td><td>${esc(a)}</td><td class="${p?"pass":"fail"}">${p?"Pass":"Fail"}</td></tr>`}).join("");
+$("#rate").textContent=Math.round(ok/T.length*100)+"%";$("#rnote").textContent=ok+" of "+T.length+" cases solved with a specific rule";}
+$("#rerun").onclick=evalRun;
+document.querySelectorAll("nav [data-v]").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav [data-v]").forEach(x=>x.setAttribute("aria-selected",x===b));clearInterval(tmr);["detect","game","eval","about"].forEach(s=>$("#"+s).hidden=s!==b.dataset.v);if(b.dataset.v==="eval")evalRun();if(b.dataset.v==="game"){D=null;newCase()}});
+$("#theme").onclick=()=>{const d=document.documentElement,dark=d.dataset.theme?d.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;d.dataset.theme=dark?"light":"dark"};
+/* ---------- game layer ---------- */
+const LV=[["Rookie",0,"🐣"],["Sleuth",50,"🔎"],["Inspector",150,"🧐"],["Detective",300,"🕵️"],["Chief",600,"🎖️"],["Legend",1000,"👑"]];
+let S={xp:0,days:0,last:"",combo:0,best:0,ok:0,tot:0,b:[]},G={},tmr,lastC=-1,D=null;
+try{S={...S,...JSON.parse(localStorage.getItem("ed_s")||"{}")}}catch(e){}
+const lvOf=x=>{let i=0;LV.forEach((l,k)=>{if(x>=l[1])i=k});return i};
+const BD=[["🔎","First Case",s=>s.xp>=10],["🎯","Sharp Eye",s=>s.ok>=5],["⚡","Hot Combo",s=>s.best>=5],["🔥","3-Day Habit",s=>s.days>=3],["🕵️","Inspector",s=>lvOf(s.xp)>=2],["🏆","Case Closer",s=>s.ok>=15]];
+const day=o=>{const d=new Date(Date.now()-(o||0)*864e5);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const CS=[["print(scroe)","NameError: name 'scroe' is not defined"],["colors = ['red','blue']\nprint(colors[2])","IndexError: list index out of range"],["print('Score: ' + 10)","TypeError: can only concatenate str (not \"int\") to str"],["user = {'name': 'Ana'}\nprint(user['age'])","KeyError: 'age'"],["x = None\nx.upper()","AttributeError: 'NoneType' object has no attribute 'upper'"],["import numpyy","ModuleNotFoundError: No module named 'numpyy'"],["print(5 / 0)","ZeroDivisionError: division by zero"],["age = int('twenty')","ValueError: invalid literal for int() with base 10: 'twenty'"],["if x == 1\n    print(x)","SyntaxError: expected ':'"],["def f():\n    f()\nf()","RecursionError: maximum recursion depth exceeded"]];
+const TY=["NameError","IndexError","TypeError","KeyError","AttributeError","ModuleNotFoundError","ZeroDivisionError","ValueError","SyntaxError","RecursionError"];
+const shuf=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+function persist(){try{localStorage.setItem("ed_s",JSON.stringify(S))}catch(e){}}
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("on"),2200)}
+function renderXP(){const i=lvOf(S.xp),l=LV[i],n=LV[i+1],p=n?(S.xp-l[1])/(n[1]-l[1])*100:100;
+$("#xp").innerHTML=`<span>${l[2]} ${l[0]}</span><span>${S.xp} XP</span><span>🔥${S.days}</span><div class="meter"><b style="width:${p}%"></b></div>`}
+function renderBd(){const e=$("#bd");if(!e)return;renderDl();e.innerHTML=BD.map(b=>`<div class="bdg ${S.b.includes(b[1])?"on":""}"><i>${b[0]}</i>${b[1]}</div>`).join("");
+const acc=S.tot?Math.round(S.ok/S.tot*100):0;$("#st").innerHTML=`<div><b>${S.combo}</b><span class="note">combo</span></div><div><b>${S.ok}/${S.tot}</b><span class="note">solved</span></div><div><b>${acc}%</b><span class="note">accuracy</span></div><div><b>${S.days}</b><span class="note">day streak</span></div>`}
+function award(n,why){const before=lvOf(S.xp);S.xp+=n;
+if(S.last!==day()){if(S.last===day(2)&&(S.fz||0)>0){S.fz--;S.days++;setTimeout(()=>toast("🧊 Streak freeze saved your streak!"),400)}else S.days=S.last===day(1)?S.days+1:1;if(S.days%7===0)S.fz=Math.min(2,(S.fz||0)+1);S.last=day();toast("🔥 Day "+S.days+" streak!")}
+BD.forEach(b=>{if(b[2](S)&&!S.b.includes(b[1])){S.b.push(b[1]);setTimeout(()=>toast(b[0]+" Badge unlocked: "+b[1]),900)}});
+if(lvOf(S.xp)>before)setTimeout(()=>toast("⬆️ Level up: "+LV[lvOf(S.xp)][0]+"!"),1600);else if(S.last===day()&&!$("#toast").classList.contains("on"))toast("+"+n+" XP · "+why);
+S.log=[...new Set([...(S.log||[]),day()])].slice(-30);S.dx=S.dxd===day()?(S.dx||0)+n:n;S.dxd=day();if(lvOf(S.xp)>before)setTimeout(boom,1600);persist();renderXP();renderBd()}
+function newCase(){clearInterval(tmr);let i;if(D){i=D.q[D.n]}else{do{i=Math.floor(Math.random()*CS.length)}while(i===lastC);lastC=i}
+const ans=CS[i][1].split(":")[0];G={i,ans,t:Date.now(),done:false,o:shuf([ans,...shuf(TY.filter(x=>x!==ans)).slice(0,3)])};
+$("#gm").innerHTML=`<div class="row" style="margin:0 0 10px;justify-content:space-between"><b>${D?"Daily "+(D.n+1)+"/5":"Case file #"+((S.tot||0)+1)}</b><span class="badge" id="tm">0s</span></div><pre>${esc(CS[i][0])}</pre><div class="ev">${esc(CS[i][1])}</div><p class="sec" style="margin-top:6px">Which error is it?</p><div class="opts">${G.o.map(o=>`<button class="opt" data-a="${esc(o)}">${esc(o)}</button>`).join("")}</div><div id="rs"></div>`;
+tmr=setInterval(()=>{const e=$("#tm");if(e)e.textContent=Math.floor((Date.now()-G.t)/1000)+"s"},1000);renderBd()}
+function pick(a){if(G.done)return;G.done=true;clearInterval(tmr);const sec=(Date.now()-G.t)/1000,ok=a===G.ans;let pts=0;S.tot++;
+if(ok){S.combo++;S.best=Math.max(S.best,S.combo);S.ok++;pts=20+Math.min(S.combo,5)*5+(sec<10?10:0)}else S.combo=0;
+document.querySelectorAll("#gm .opt").forEach(b=>{if(b.dataset.a===G.ans)b.classList.add("good");else if(b.dataset.a===a)b.classList.add("bad")});
+const r=analyze(CS[G.i][1]);
+$("#rs").innerHTML=`<div class="hint ${ok?"fix":""}"><small>${ok?"Case closed! +"+pts+" XP"+(sec<10?" (speed bonus)":"")+" · combo x"+S.combo:"Not quite. It was "+esc(G.ans)+". Combo reset."}</small><div>${esc(r.e||"")}</div><pre>${esc(r.f||"")}</pre></div><div class="row"><button class="btn" id="nx">${D&&D.n>=4?"Finish daily":"Next case →"}</button></div>`;
+if(D){D.res+=ok?"🟩":"🟥";if(ok)D.ok++}if(ok)boom();try{navigator.vibrate&&navigator.vibrate(ok?15:[30,40,30])}catch(e){}
+award(ok?pts:2,ok?"Case closed":"Good try")}
+$("#gm").addEventListener("click",e=>{const o=e.target.closest("[data-a]");if(o)return pick(o.dataset.a);if(e.target.closest("#nx"))nextStep();if(e.target.closest("#sh"))share();if(e.target.closest("#pr")){D=null;newCase()}});
+renderXP();renderBd();
+TY.push("FileNotFoundError","IndentationError","UnboundLocalError");
+CS.push([`print(len(5))`,`TypeError: object of type 'int' has no len()`],[`d = {}
+d.add(1)`,`AttributeError: 'dict' object has no attribute 'add'`],[`open('data.csv')`,`FileNotFoundError: [Errno 2] No such file or directory: 'data.csv'`],[`def f():
+print(1)`,`IndentationError: expected an indented block after function definition on line 1`],[`count = 0
+def inc():
+    count += 1
+inc()`,`UnboundLocalError: local variable 'count' referenced before assignment`],[`nums = [1, 2, 3]
+print(nums['a'])`,`TypeError: list indices must be integers or slices, not str`],[`float('abc')`,`ValueError: could not convert string to float: 'abc'`],[`nums = [1, 2]
+nums.push(3)`,`AttributeError: 'list' object has no attribute 'push'`]);
+function boom(){if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;for(let i=0;i<28;i++){const p=document.createElement("i");p.style.cssText=`position:fixed;left:50%;top:45%;width:8px;height:8px;border-radius:2px;z-index:30;pointer-events:none;background:hsl(${Math.random()*360},85%,60%)`;document.body.appendChild(p);const a=Math.random()*6.28,d=80+Math.random()*180;p.animate([{transform:"translate(0,0) rotate(0)",opacity:1},{transform:`translate(${Math.cos(a)*d}px,${Math.sin(a)*d+120}px) rotate(${Math.random()*720}deg)`,opacity:0}],{duration:900+Math.random()*500,easing:"cubic-bezier(.2,.8,.3,1)"}).onfinish=()=>p.remove()}}
+function left(){const n=new Date(),m=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1),s=Math.floor((m-n)/1000);return Math.floor(s/3600)+"h "+Math.floor(s%3600/60)+"m"}
+function renderDl(){const e=$("#dl");if(!e)return;const gx=S.dxd===day()?Math.min(S.dx||0,50):0;
+const wk=[6,5,4,3,2,1,0].map(k=>{const on=(S.log||[]).includes(day(k));return `<div class="wd ${on?"on":""}">${on?"🔥":"·"}<small>${new Date(Date.now()-k*864e5).toLocaleDateString(undefined,{weekday:"narrow"})}</small></div>`}).join("");
+e.innerHTML=`<div class="wk">${wk}</div><div class="note">Daily goal ${gx}/50 XP${S.fz?" · 🧊 ×"+S.fz+" streak freeze":""}</div><div class="meter"><b style="width:${gx*2}%"></b></div>${S.last===day(1)&&S.days>0?`<p class="note" style="margin:8px 0 0">🔥 Play today to extend your ${S.days}-day streak.</p>`:""}<button class="btn" id="dq" style="width:100%;margin:12px 0">${S.dd===day()?"✅ Daily done · view result":"🎯 Play today’s Daily · bonus XP"}</button>`}
+$("#dl").addEventListener("click",e=>{if(e.target.closest("#dq"))S.dd===day()?showDone():startDaily()});
+function startDaily(){let h=0;for(const c of day())h=Math.imul(31,h)+c.charCodeAt(0)|0;const r=()=>{h|=0;h=h+0x6D2B79F5|0;let t=Math.imul(h^h>>>15,1|h);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const a=CS.map((_,i)=>i);for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}D={q:a.slice(0,5),n:0,res:"",ok:0};newCase()}
+function nextStep(){if(D){D.n++;if(D.n>=5)return finishDaily()}newCase()}
+function finishDaily(){S.dd=day();S.dr=D.res;S.ds=D.ok;const b=25+D.ok*10;D=null;award(b,"Daily complete");boom();showDone()}
+function showDone(){clearInterval(tmr);$("#gm").innerHTML=`<div class="case"><span class="badge">Daily complete</span><h2>${S.ds}/5 solved</h2><div class="stat">${esc(S.dr)}</div><p class="note" id="cd">Next daily in ${left()}</p><div class="row"><button class="btn" id="sh">Share result</button><button class="btn g" id="pr">Keep practicing</button></div></div>`;tmr=setInterval(()=>{const c=$("#cd");if(c)c.textContent="Next daily in "+left()},30000)}
+async function share(){const text=`🔍 Error Detective ${day()}\n${S.ds}/5 ${S.dr}\n🔥 ${S.days}-day streak`;try{if(navigator.share){await navigator.share({text});return}await navigator.clipboard.writeText(text);toast("Result copied. Paste it anywhere!")}catch(e){toast("Sharing was cancelled or blocked")}}
+hist();count();
+document.querySelector('nav [data-v="game"]').click();
+</script>
+</body>
+</html>
